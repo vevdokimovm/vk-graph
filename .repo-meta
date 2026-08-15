@@ -1,0 +1,2 @@
+description=3D-визуализация графа друзей ВКонтакте: FastAPI-бэкенд, интерактивный фронт, экспорт в JSON и GraphML
+topics=python,fastapi,graph-visualization,network-analysis,vk-api,threejs,pydantic
