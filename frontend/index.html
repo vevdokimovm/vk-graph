@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>VK Graph</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap" rel="stylesheet"/>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{--bg:#080810;--surface:#10101e;--border:#1e1e3a;--accent:#7b5ea7;--accent2:#c084fc;--text:#e2e0f0;--muted:#6b6880;--danger:#f87171}
+    html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;overflow:hidden}
+    .layout{display:grid;grid-template-columns:280px 1fr;grid-template-rows:50px 1fr;height:100vh}
+    header{grid-column:1/-1;display:flex;align-items:center;gap:10px;padding:0 18px;border-bottom:1px solid var(--border);background:var(--surface)}
+    .logo{width:24px;height:24px;background:linear-gradient(135deg,var(--accent),var(--accent2));border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#fff}
+    header h1{font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+    .ver{font-family:'Space Mono',monospace;font-size:9px;color:var(--muted);margin-left:auto}
+    aside{background:var(--surface);border-right:1px solid var(--border);padding:18px 14px;display:flex;flex-direction:column;gap:16px;overflow-y:auto}
+    .sl{font-family:'Space Mono',monospace;font-size:8px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin-bottom:5px}
+    .field label{display:block;font-size:10px;color:var(--muted);margin-bottom:4px}
+    .field input{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:8px 11px;color:var(--text);font-family:'Space Mono',monospace;font-size:12px;outline:none;transition:border-color .2s}
+    .field input:focus{border-color:var(--accent)}
+    .field input::placeholder{color:var(--muted)}
+    .tog{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+    .tb{padding:7px;border:1px solid var(--border);border-radius:7px;background:transparent;color:var(--muted);font-family:'Syne',sans-serif;font-size:10px;font-weight:700;cursor:pointer;transition:all .2s;text-align:center}
+    .tb.on{border-color:var(--accent);color:var(--accent2);background:rgba(123,94,167,.1)}
+    .btn{width:100%;padding:11px;border:none;border-radius:9px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;font-family:'Syne',sans-serif;font-size:12px;font-weight:800;cursor:pointer;transition:opacity .2s,transform .1s}
+    .btn:hover{opacity:.9}.btn:active{transform:scale(.98)}.btn:disabled{opacity:.4;cursor:not-allowed}
+    .pw{display:none;flex-direction:column;gap:5px;margin-top:9px}.pw.on{display:flex}
+    .pt{height:2px;background:var(--border);border-radius:99px;overflow:hidden}
+    .pf{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:99px;width:0%;transition:width .3s}
+    .pl{font-family:'Space Mono',monospace;font-size:9px;color:var(--muted)}
+    .sg{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+    .sc{background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:8px 10px}
+    .sc .v{font-family:'Space Mono',monospace;font-size:16px;font-weight:700;color:var(--accent2)}
+    .sc .l{font-size:9px;color:var(--muted);margin-top:1px}
+    .sc.w{grid-column:1/-1}.sc.w .v{font-size:11px;word-break:break-word}
+    .eg{display:flex;flex-direction:column;gap:4px}
+    .eb{display:flex;align-items:center;gap:7px;padding:7px 11px;border:1px solid var(--border);border-radius:7px;background:transparent;color:var(--text);font-family:'Space Mono',monospace;font-size:9px;cursor:pointer;transition:all .2s;width:100%}
+    .eb:hover{border-color:var(--accent);color:var(--accent2)}.eb:disabled{opacity:.3;cursor:not-allowed;pointer-events:none}
+    .err{display:none;background:rgba(248,113,113,.08);border:1px solid var(--danger);border-radius:7px;padding:8px 11px;font-size:10px;color:var(--danger);font-family:'Space Mono',monospace}.err.on{display:block}
+    main{position:relative;overflow:hidden}
+    #cv{display:block;width:100%;height:100%}
+    .empty{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:var(--muted);pointer-events:none}
+    .empty .big{font-size:40px;opacity:.2}.empty p{font-size:11px}
+    #tip{position:fixed;background:rgba(16,16,30,.95);border:1px solid var(--border);border-radius:7px;padding:6px 10px;font-family:'Space Mono',monospace;font-size:10px;color:var(--text);pointer-events:none;display:none;z-index:99}
+    #tip .tn{font-weight:700;color:var(--accent2);margin-bottom:1px}
+    #tip .td{color:var(--muted);font-size:9px}
+    .hint{position:absolute;bottom:12px;right:12px;font-family:'Space Mono',monospace;font-size:8px;color:rgba(107,104,128,.5);text-align:right;line-height:2;pointer-events:none}
+  </style>
+</head>
+<body>
+<div class="layout">
+  <header>
+    <div class="logo">V</div>
+    <h1>VK Graph</h1>
+    <span class="ver">v4.0 · Three.js 3D</span>
+  </header>
+  <aside>
+    <div><div class="sl">Параметры</div><div class="field"><label>VK ID или короткое имя</label><input id="vkid" type="text" placeholder="vasiliievdokimov"/></div></div>
+    <div><div class="sl">Режим</div><div class="tog"><button class="tb on" data-m="friends">Мои друзья</button><button class="tb" data-m="friends_of_friends">Друзья друзей</button></div></div>
+    <div>
+      <button class="btn" id="btnBuild">Построить граф</button>
+      <div class="pw" id="pw"><div class="pt"><div class="pf" id="pf"></div></div><div class="pl" id="pl">Загрузка...</div></div>
+      <div class="err" id="err"></div>
+    </div>
+    <div id="sw" style="display:none">
+      <div class="sl">Статистика</div>
+      <div class="sg">
+        <div class="sc"><div class="v" id="sn">—</div><div class="l">Узлов</div></div>
+        <div class="sc"><div class="v" id="se">—</div><div class="l">Связей</div></div>
+        <div class="sc w"><div class="l" style="margin-bottom:2px">Самый связанный</div><div class="v" id="sh">—</div><div class="l" id="shd"></div></div>
+      </div>
+    </div>
+    <div>
+      <div class="sl">Экспорт</div>
+      <div class="eg">
+        <button class="eb" id="ePng" disabled>🖼️&nbsp; PNG — скриншот</button>
+        <button class="eb" id="eJson" disabled>📄&nbsp; JSON — данные</button>
+        <button class="eb" id="eGml" disabled>🔗&nbsp; GraphML — Gephi</button>
+      </div>
+    </div>
+  </aside>
+  <main id="mainEl">
+    <div class="empty" id="empty"><div class="big">◎</div><p>Введи VK ID и построй граф</p></div>
+    <canvas id="cv"></canvas>
+    <div class="hint">ЛКМ — вращение · Колесо — зум · ПКМ — перемещение · Наведи — имя</div>
+  </main>
+</div>
+<div id="tip"><div class="tn" id="tn"></div><div class="td" id="td"></div></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+let mode='friends', session=null;
+let renderer, scene, camera, animating=false;
+let sprites=[], spriteData=[];
+let ptimer=null;
+
+// ── mode ───────────────────────────────────────────────────────────────────────
+document.querySelectorAll('.tb').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('.tb').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on'); mode=b.dataset.m;
+}));
+
+// ── progress ───────────────────────────────────────────────────────────────────
+function pStart(lbl){
+  document.getElementById('pw').classList.add('on');
+  document.getElementById('pl').textContent=lbl;
+  const pf=document.getElementById('pf'); pf.style.width='0%';
+  let p=0; ptimer=setInterval(()=>{p=Math.min(p+Math.random()*3,88);pf.style.width=p+'%';},350);
+}
+function pDone(){clearInterval(ptimer);document.getElementById('pf').style.width='100%';document.getElementById('pl').textContent='Готово';setTimeout(()=>document.getElementById('pw').classList.remove('on'),600);}
+function pMsg(t){document.getElementById('pl').textContent=t;}
+
+// ── make round canvas texture ─────────────────────────────────────────────────
+function makeRoundTexture(img, size=128) {
+  const c = document.createElement('canvas');
+  c.width = c.height = size;
+  const ctx = c.getContext('2d');
+  ctx.beginPath();
+  ctx.arc(size/2, size/2, size/2, 0, Math.PI*2);
+  ctx.closePath();
+  ctx.clip();
+  try {
+    ctx.drawImage(img, 0, 0, size, size);
+  } catch(e) {
+    ctx.fillStyle = '#2a1a4a'; ctx.fill();
+  }
+  ctx.beginPath();
+  ctx.arc(size/2, size/2, size/2-1, 0, Math.PI*2);
+  ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+  ctx.lineWidth = 3;
+  ctx.stroke();
+  const tex = new THREE.CanvasTexture(c);
+  tex.needsUpdate = true;
+  return tex;
+}
+
+function makeFallbackTexture(label, size=128) {
+  const c = document.createElement('canvas');
+  c.width = c.height = size;
+  const ctx = c.getContext('2d');
+  ctx.beginPath();
+  ctx.arc(size/2, size/2, size/2, 0, Math.PI*2);
+  ctx.closePath();
+  ctx.fillStyle = '#1a1030';
+  ctx.fill();
+  ctx.fillStyle = 'rgba(192,132,252,0.85)';
+  ctx.font = `bold ${size*0.35}px sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  const initials = (label||'?').trim().split(' ').map(w=>w[0]||'').join('').slice(0,2).toUpperCase();
+  ctx.fillText(initials, size/2, size/2);
+  ctx.beginPath();
+  ctx.arc(size/2, size/2, size/2-1, 0, Math.PI*2);
+  ctx.strokeStyle = 'rgba(192,132,252,0.4)';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  return new THREE.CanvasTexture(c);
+}
+
+// ── Three.js ───────────────────────────────────────────────────────────────────
+function initThree() {
+  const el = document.getElementById('mainEl');
+  const W = el.clientWidth, H = el.clientHeight;
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x000000);
+  camera = new THREE.PerspectiveCamera(55, W/H, 0.1, 2000);
+  camera.position.set(0, 0, 150);
+  renderer = new THREE.WebGLRenderer({canvas: document.getElementById('cv'), antialias:true, preserveDrawingBuffer:true});
+  renderer.setPixelRatio(window.devicePixelRatio);
+  renderer.setSize(W, H);
+  window.addEventListener('resize', ()=>{
+    const W2=el.clientWidth,H2=el.clientHeight;
+    camera.aspect=W2/H2; camera.updateProjectionMatrix();
+    renderer.setSize(W2,H2);
+  });
+  initControls();
+  if (!animating) { animating=true; loop(); }
+}
+
+function loop() { requestAnimationFrame(loop); renderer.render(scene, camera); }
+
+// ── orbit controls ─────────────────────────────────────────────────────────────
+function initControls() {
+  const el = document.getElementById('cv');
+  let down=false, rdown=false, lx=0, ly=0;
+  const sph={th:0.3, ph:1.4, r:150};
+  const pan=new THREE.Vector3();
+
+  function apply() {
+    const x=sph.r*Math.sin(sph.ph)*Math.sin(sph.th);
+    const y=sph.r*Math.cos(sph.ph);
+    const z=sph.r*Math.sin(sph.ph)*Math.cos(sph.th);
+    camera.position.set(x+pan.x, y+pan.y, z+pan.z);
+    camera.lookAt(pan);
+  }
+
+  el.addEventListener('mousedown', e=>{
+    if(e.button===0) down=true;
+    if(e.button===2) rdown=true;
+    lx=e.clientX; ly=e.clientY;
+  });
+  el.addEventListener('contextmenu', e=>e.preventDefault());
+  window.addEventListener('mouseup', ()=>{down=false;rdown=false;});
+  window.addEventListener('mousemove', e=>{
+    if(!down&&!rdown) return;
+    const dx=e.clientX-lx, dy=e.clientY-ly; lx=e.clientX; ly=e.clientY;
+    if(down){
+      sph.th -= dx*0.005;
+      sph.ph = Math.max(0.05, Math.min(Math.PI-0.05, sph.ph+dy*0.005));
+    } else {
+      const fw=new THREE.Vector3(); camera.getWorldDirection(fw);
+      const right=new THREE.Vector3().crossVectors(fw, new THREE.Vector3(0,1,0)).normalize();
+      pan.addScaledVector(right, -dx*0.08);
+      pan.y += dy*0.08;
+    }
+    apply();
+  });
+  el.addEventListener('wheel', e=>{
+    sph.r = Math.max(10, Math.min(600, sph.r+e.deltaY*0.2));
+    apply();
+  }, {passive:true});
+  apply();
+}
+
+// ── layout 3D ─────────────────────────────────────────────────────────────────
+function layout3d(nodes, edges) {
+  const pos={};
+  const N=nodes.length;
+  // fibonacci sphere init
+  nodes.forEach((n,i)=>{
+    const y=1-2*(i/Math.max(N-1,1));
+    const r=Math.sqrt(1-y*y);
+    const theta=Math.PI*(3-Math.sqrt(5))*i;
+    const scale=80;
+    pos[n.id]={x:Math.cos(theta)*r*scale,y:y*scale,z:Math.sin(theta)*r*scale,vx:0,vy:0,vz:0};
+  });
+
+  const k=Math.cbrt(80*80*80/Math.max(N,1))*1.3;
+  for(let it=0;it<80;it++){
+    const cool=6*(1-it/80);
+    for(let i=0;i<N;i++){
+      const pi=pos[nodes[i].id];
+      let fx=0,fy=0,fz=0;
+      for(let j=0;j<N;j++){
+        if(i===j) continue;
+        const pj=pos[nodes[j].id];
+        const dx=pi.x-pj.x,dy=pi.y-pj.y,dz=pi.z-pj.z;
+        const d2=dx*dx+dy*dy+dz*dz+1;
+        const f=k*k/d2;
+        fx+=f*dx;fy+=f*dy;fz+=f*dz;
+      }
+      pi.vx+=fx;pi.vy+=fy;pi.vz+=fz;
+    }
+    edges.forEach(e=>{
+      const pu=pos[e.source],pv=pos[e.target];if(!pu||!pv)return;
+      const dx=pv.x-pu.x,dy=pv.y-pu.y,dz=pv.z-pu.z;
+      const d=Math.sqrt(dx*dx+dy*dy+dz*dz)||0.1;
+      const f=d/k;
+      const fx=f*dx/d,fy=f*dy/d,fz=f*dz/d;
+      pu.vx+=fx;pu.vy+=fy;pu.vz+=fz;
+      pv.vx-=fx;pv.vy-=fy;pv.vz-=fz;
+    });
+    nodes.forEach(n=>{
+      const p=pos[n.id];
+      const sp=Math.sqrt(p.vx*p.vx+p.vy*p.vy+p.vz*p.vz)||1;
+      const sc=Math.min(sp,cool)/sp;
+      p.x+=p.vx*sc;p.y+=p.vy*sc;p.z+=p.vz*sc;
+      p.vx*=0.8;p.vy*=0.8;p.vz*=0.8;
+    });
+  }
+  return pos;
+}
+
+// ── build scene ────────────────────────────────────────────────────────────────
+function buildScene(graphData) {
+  sprites=[]; spriteData=[];
+  scene.children.slice().forEach(c=>scene.remove(c));
+
+  const {nodes, edges}=graphData;
+  const maxDeg=Math.max(...nodes.map(n=>n.degree||0),1);
+
+  pMsg('Вычисляем расположение...');
+  const pos=layout3d(nodes,edges);
+
+  // edges
+  const edgePts=[];
+  edges.forEach(e=>{
+    const pu=pos[e.source],pv=pos[e.target];if(!pu||!pv)return;
+    edgePts.push(pu.x,pu.y,pu.z,pv.x,pv.y,pv.z);
+  });
+  if(edgePts.length){
+    const geo=new THREE.BufferGeometry();
+    geo.setAttribute('position',new THREE.Float32BufferAttribute(edgePts,3));
+    scene.add(new THREE.LineSegments(geo,new THREE.LineBasicMaterial({color:0x888899,transparent:true,opacity:0.3})));
+  }
+
+  // nodes as sprites with fallback textures first
+  nodes.forEach(n=>{
+    const p=pos[n.id];if(!p)return;
+    const deg=n.degree||0;
+    const size=4+(deg/maxDeg)*18;
+    const tex=makeFallbackTexture(n.label);
+    const mat=new THREE.SpriteMaterial({map:tex,transparent:true});
+    const sprite=new THREE.Sprite(mat);
+    sprite.position.set(p.x,p.y,p.z);
+    sprite.scale.set(size,size,1);
+    sprite.userData={label:n.label,degree:deg,photo:n.photo,nodeId:n.id};
+    scene.add(sprite);
+    sprites.push(sprite);
+    spriteData.push({sprite,n,size});
+  });
+
+  // load avatars async через прокси
+  sprites.forEach(sprite=>{
+    const {photo}=sprite.userData;
+    if(!photo||!photo.startsWith('http')) return;
+    const img=new Image();
+    img.crossOrigin='anonymous';
+    img.onload=()=>{
+      const tex=makeRoundTexture(img,128);
+      sprite.material.map=tex;
+      sprite.material.needsUpdate=true;
+    };
+    img.onerror=()=>{};
+    img.src=`/api/avatar?url=${encodeURIComponent(photo)}`;
+  });
+}
+
+// ── raycaster ──────────────────────────────────────────────────────────────────
+const ray=new THREE.Raycaster();
+const mouse=new THREE.Vector2();
+document.getElementById('cv').addEventListener('mousemove',e=>{
+  if(!renderer)return;
+  const r=renderer.domElement.getBoundingClientRect();
+  mouse.x=((e.clientX-r.left)/r.width)*2-1;
+  mouse.y=-((e.clientY-r.top)/r.height)*2+1;
+  ray.setFromCamera(mouse,camera);
+  const hits=ray.intersectObjects(sprites);
+  const tip=document.getElementById('tip');
+  if(hits.length){
+    const u=hits[0].object.userData;
+    document.getElementById('tn').textContent=u.label||'—';
+    document.getElementById('td').textContent=(u.degree||0)+' связей';
+    tip.style.display='block';tip.style.left=(e.clientX+14)+'px';tip.style.top=(e.clientY-8)+'px';
+  } else {tip.style.display='none';}
+});
+
+// ── build button ───────────────────────────────────────────────────────────────
+document.getElementById('btnBuild').addEventListener('click',async()=>{
+  const vkId=document.getElementById('vkid').value.trim();if(!vkId)return;
+  const btn=document.getElementById('btnBuild'),err=document.getElementById('err');
+  btn.disabled=true;err.classList.remove('on');
+  pStart('Запускаем построение...');
+  try{
+    // 1. Запускаем задачу — сервер сразу отвечает job_id
+    const res=await fetch('/api/graph/build',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({vk_id:vkId,mode})});
+    if(!res.ok){const e=await res.json();throw new Error(e.detail||'Ошибка сервера');}
+    const {job_id}=await res.json();
+
+    // 2. Поллим статус каждые 3 секунды
+    pMsg('Загружаем данные из VK...');
+    const startTime=Date.now();
+    let jobData=null;
+    while(true){
+      await new Promise(r=>setTimeout(r,3000));
+      const sr=await fetch(`/api/graph/status/${job_id}`);
+      const status=await sr.json();
+      if(status.status==='error') throw new Error(status.error||'Ошибка построения');
+      if(status.status==='done'){jobData=status;break;}
+      // обновляем лейбл с таймером
+      const elapsed=Math.round((Date.now()-startTime)/1000);
+      pMsg(`Загружаем данные из VK... ${elapsed}с`);
+      if(elapsed>1800) throw new Error('Превышено время ожидания (30 мин)');
+    }
+
+    // 3. Получаем данные графа
+    session=jobData.session_id;
+    pMsg('Загружаем связи...');
+    const gres=await fetch(`/api/graph/${session}/data`);
+    const graphData=await gres.json();
+    document.getElementById('empty').style.display='none';
+    if(!renderer) initThree();
+    pMsg('Строим 3D граф...');
+    await new Promise(r=>setTimeout(r,30));
+    buildScene(graphData);
+    pDone();
+    const s=jobData.stats;
+    document.getElementById('sn').textContent=s.nodes;
+    document.getElementById('se').textContent=s.edges;
+    document.getElementById('sh').textContent=s.most_connected;
+    document.getElementById('shd').textContent=s.most_connected_degree+' связей';
+    document.getElementById('sw').style.display='block';
+    ['ePng','eJson','eGml'].forEach(id=>document.getElementById(id).disabled=false);
+  }catch(e){
+    clearInterval(ptimer);document.getElementById('pw').classList.remove('on');
+    err.textContent=e.message;err.classList.add('on');
+  }finally{btn.disabled=false;}
+});
+
+document.getElementById('vkid').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('btnBuild').click();});
+
+// ── export ─────────────────────────────────────────────────────────────────────
+document.getElementById('ePng').addEventListener('click',()=>{
+  if(!renderer)return;
+  renderer.render(scene,camera);
+  try {
+    const url=renderer.domElement.toDataURL('image/png');
+    if(!url||url==='data:,') throw new Error('tainted');
+    const a=document.createElement('a');a.href=url;a.download='vkgraph.png';a.click();
+  } catch(e) {
+    // canvas tainted — используем html2canvas fallback через blob
+    renderer.domElement.toBlob(blob=>{
+      if(!blob){alert('Не удалось сохранить PNG');return;}
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement('a');a.href=url;a.download='vkgraph.png';a.click();
+      setTimeout(()=>URL.revokeObjectURL(url),1000);
+    },'image/png');
+  }
+});
+document.getElementById('eJson').addEventListener('click',()=>{if(session){const a=document.createElement('a');a.href=`/api/export/${session}/json`;a.download='vkgraph.json';a.click();}});
+document.getElementById('eGml').addEventListener('click',()=>{if(session){const a=document.createElement('a');a.href=`/api/export/${session}/graphml`;a.download='vkgraph.graphml';a.click();}});
+</script>
+</body>
+</html>
