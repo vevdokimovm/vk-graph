@@ -34,3 +34,13 @@
 ---
 
 **Автор:** Василий Евдокимов · [@vevdokimovm](https://github.com/vevdokimovm) · vevdokimovm@gmail.com
+
+## Структура
+
+<!-- STRUCTURE:AUTO:START -->
+| Папка | Файлов | Что внутри |
+|---|---|---|
+| `backend/` | 9 | TODO — заполнить вручную |
+| `frontend/` | 1 | TODO — заполнить вручную |
+| `reports/` | 3 | TODO — заполнить вручную |
+<!-- STRUCTURE:AUTO:END -->
